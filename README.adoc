@@ -1,0 +1,7 @@
+= Omelas Breakpoint Beta MCPO Integration Package
+
+This package is an R&D refactor that preserves the canonical launcher while making runtime execution replaceable.
+
+The default runtime remains the Alpha filesystem runtime. MCPO is opt-in through `MCP_RUNTIME=mcpo`.
+
+Read `docs/BREAKPOINT-BETA-MCPO.adoc` before copying files into the repository.

@@ -1,0 +1,71 @@
+= Breakpoint Beta: Governed MCPO Runtime
+
+This package separates repository governance from runtime execution without changing the existing launcher interface.
+
+== Files
+
+* `scripts/mcp/run-mcp.bash`: canonical launcher and runtime selector.
+* `scripts/mcp/lib/governance.bash`: access-mode, environment, branch, and clean-tree validation.
+* `scripts/mcp/runtimes/filesystem.bash`: preserves the Alpha filesystem-container behavior.
+* `scripts/mcp/runtimes/mcpo.bash`: launches MCPO and the filesystem MCP server in one governed container.
+* `scripts/mcp/build-mcpo-filesystem.bash`: builds the experimental Beta image.
+* `docker/mcp/Dockerfile.mcpo-filesystem`: MCPO plus the official filesystem MCP package.
+
+== Install
+
+Copy the package contents into the repository root. Preserve the existing `run-readonly.bash` and `run-readwrite.bash` wrappers; their interface to `run-mcp.bash` remains unchanged.
+
+Before replacing files, create a branch commit or working copy backup.
+
+== Validate Alpha compatibility
+
+[source,bash]
+----
+bash -n scripts/mcp/run-mcp.bash
+bash -n scripts/mcp/lib/governance.bash
+bash -n scripts/mcp/runtimes/filesystem.bash
+bash -n scripts/mcp/runtimes/mcpo.bash
+bash -n scripts/mcp/build-mcpo-filesystem.bash
+----
+
+Run the existing read-only or read-write wrapper with no new environment variable. The default runtime remains `filesystem`.
+
+== Build the Beta image
+
+[source,bash]
+----
+bash ./scripts/mcp/build-mcpo-filesystem.bash
+----
+
+== Start the governed MCPO runtime
+
+For the current shell only:
+
+[source,bash]
+----
+export MCP_RUNTIME=mcpo
+export MCP_API_KEY='replace-with-a-local-development-key'
+bash ./scripts/mcp/run-readwrite.bash
+----
+
+The generated OpenAPI documentation is available on the configured host port at `/docs`.
+
+For the current Omelas settings this is normally:
+
+[source,text]
+----
+http://localhost:8765/docs
+----
+
+== Open WebUI connection note
+
+The launcher binds the endpoint to `127.0.0.1` to preserve the Alpha local-only boundary. A Dockerized Open WebUI container cannot generally reach that host-loopback binding directly. First validate MCPO from the host browser or `curl`. Connecting Open WebUI is the next Beta sub-step and may require either:
+
+* a dedicated user-defined Docker network, or
+* an explicitly governed host-gateway binding decision.
+
+Do not broaden the bind address until that network boundary is reviewed.
+
+== Rollback
+
+Restore the previous `scripts/mcp/run-mcp.bash`. The new files are otherwise additive, and the existing wrapper scripts require no changes.

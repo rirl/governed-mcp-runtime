@@ -218,6 +218,8 @@ Produce concise engineering documentation covering:
 * Open WebUI connection
 * OpenAPI validation
 * Filesystem MCP validation
+* Filesystem mutation capability validation (including recursive directory
+  creation and governed deletion)
 * Runtime upgrades
 * Troubleshooting
 
@@ -232,61 +234,10 @@ This branch is complete when:
 * Runtime verification succeeds.
 * VS Code Dev Container is operational.
 * Open WebUI successfully communicates with the runtime.
+* Required filesystem mutation capabilities have been assessed and validated
+  against runtime access-mode policy.
 * GAE-0001 can resume using the stabilized runtime.
 
 == Engineering Notes
 
 This section records engineering discoveries made during implementation.
-
-Notes capture implementation decisions, observations, and revised approaches.
-
-They are intentionally separate from governance records.
-
-=== EN-0001 — Runtime Reproducibility
-
-GAE-0001 exposed that the governed runtime image was not reproducibly built.
-
-Floating Python and Node dependencies allowed subsequent image rebuilds to
-resolve incompatible dependency graphs.
-
-Future runtime images will explicitly pin all externally resolved runtime
-dependencies.
-
-Status::
-
-OPEN
-
-=== EN-0002 — Development Environment
-
-The preferred engineering environment will become a VS Code Dev Container.
-
-The Dev Container will provide a reproducible operator workspace while the
-governed runtime itself continues to execute as an independent Docker
-container.
-
-Status::
-
-PLANNED
-
-=== EN-0003 — Runtime Architecture
-
-The separation of repositories proved valuable during GAE-0001.
-
-The runtime engineering defect was isolated entirely within the
-`governed-mcp-runtime` repository without requiring changes to the governed
-target repository.
-
-This validates the architectural decision to separate runtime engineering
-from governed project repositories.
-
-Status::
-
-OBSERVED
-
-== Future Notes
-
-Additional engineering observations should be recorded here as implementation
-progresses.
-
-The objective is to preserve engineering continuity while maintaining focus
-on the branch deliverables.

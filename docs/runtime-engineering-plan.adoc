@@ -19,225 +19,328 @@ It is expected to evolve throughout implementation.
 
 It is *not* intended to become a governance artifact.
 
-== Repository Baseline
+== Current Status
 
 Repository::
-
 governed-mcp-runtime
 
-Working Branch::
-
-feature/runtime-v0.2
-
 Baseline::
-
-main
-
-Baseline Tag::
-
 v0.1.0
 
+Working Branch::
+feature/runtime-v0.2
+
 Status::
+Phase 1 — Runtime Stabilization (Execution Underway)
 
-Engineering In Progress
+== Motivation
 
-== Branch Objective
+The initial Governed MCP Runtime successfully demonstrated the end-to-end
+execution path:
 
-The purpose of this branch is to mature the governed MCP runtime from the
-initial prototype into a production-quality engineering runtime that provides:
+Governed Launcher →
+Docker →
+Filesystem MCP Server →
+MCPO →
+Open WebUI.
 
-* Deterministic Docker builds.
-* Reproducible runtime environments.
-* Automated runtime verification.
-* A reproducible VS Code development environment.
-* A stable execution platform for governed engineering repositories.
+Subsequent validation exposed that the runtime depended upon floating package
+versions obtained during image construction.
 
-Completion of this work will allow GAE-0001 within the Awake in Omelas
-repository to resume using a fully reproducible runtime.
+A later rebuild produced an incompatibility between the Python packages
+`mcpo` and `mcp`, causing the runtime to fail before startup.
 
-== Engineering Philosophy
+Version 0.2 focuses on eliminating this class of failure by making runtime
+construction deterministic.
 
-The following principles guide this branch.
+== Objectives
 
-=== Reproducibility First
+Phase 1 seeks to establish a reproducible runtime foundation.
 
-Given identical repository contents, the runtime should build into an
-identical execution environment.
+Objectives include:
 
-No dependency should be resolved from an unbounded "latest" version.
+* deterministic Docker image construction
+* explicit dependency policy
+* reproducible Python runtime
+* reproducible Node runtime
+* reproducible Docker build process
+* successful end-to-end runtime validation
 
-=== Engineering Before Expansion
+== Guiding Principles
 
-The objective is to strengthen the execution platform before expanding its
-capabilities.
+The runtime should evolve using normal engineering practice.
 
-A reliable runtime provides greater long-term value than additional features.
+Engineering observations should drive implementation.
 
-=== Small, Reviewable Changes
+Validation should accompany each significant modification.
 
-Implementation should proceed through a sequence of focused commits.
-
-Each commit should represent a complete, reviewable engineering improvement.
-
-=== Verify Before Proceeding
-
-Every engineering enhancement should be validated before additional work
-begins.
-
-Verification is part of implementation rather than a later activity.
-
-== Current Assessment
-
-GAE-0001 successfully validated the repository governance model and exposed a
-runtime engineering defect.
-
-The failure was isolated to the runtime image rather than the target
-repository.
-
-Investigation showed that the Docker image currently resolves floating
-dependencies during every build.
-
-Consequently, rebuilding the runtime does not guarantee equivalent runtime
-behavior.
-
-The immediate engineering priority is therefore runtime stabilization rather
-than continuation of governed artifact execution.
+The runtime should become progressively more deterministic rather than more
+complex.
 
 == Phase 1 — Runtime Stabilization
 
-Objective::
+=== Goal
 
-Establish a deterministic runtime image.
+Produce a runtime that can be rebuilt at any future date with equivalent
+behavior.
 
-Planned Work::
+=== Initial Engineering Tasks
 
-* Pin the Docker base image.
-* Pin Python dependencies.
-* Pin Node dependencies.
-* Eliminate floating package resolution.
-* Produce repeatable Docker builds.
+* establish repository-root Docker build context
+* separate dependency policy from build implementation
+* pin Python package graph
+* validate runtime startup
+* reconnect Open WebUI
 
-Expected Deliverables::
+== Engineering Decisions
 
-* Updated Dockerfile
-* Version constraint definitions
-* Locked dependency graph
+=== Repository-root Docker Build Context
 
-Completion Criteria::
+Status::
 
-* Clean build.
-* Successful runtime startup.
-* Successful OpenAPI endpoint.
-* Successful Filesystem MCP startup.
+COMPLETE
 
-== Phase 2 — Runtime Verification
+The Docker build now uses the repository root as its build context rather than
+the Dockerfile directory.
 
-Objective::
+Benefits:
 
-Automatically verify every runtime image.
+* simpler COPY operations
+* future-proof repository layout
+* consistent build semantics
+* easier addition of future build artifacts
 
-Planned Verification::
+=== Dedicated Build Workspace
 
-* Runtime startup
-* Installed dependency versions
-* Image identity
-* OpenAPI availability
-* Filesystem MCP execution
+Status::
 
-Expected Utilities::
+COMPLETE
+
+Temporary build artifacts are staged within:
+
+----
+/build
+----
+
+rather than relying on `/tmp`.
+
+The workspace is removed before the image is finalized.
+
+=== Dependency Policy
+
+Status::
+
+COMPLETE
+
+Python dependency policy has been separated into:
+
+----
+docker/mcp/constraints.txt
+----
+
+This allows dependency versions to evolve independently from Docker build
+mechanics.
+
+Current pinned versions:
+
+----
+mcpo==0.0.20
+mcp==1.28.1
+----
+
+=== Build Wrapper
+
+Status::
+
+COMPLETE
+
+The build wrapper now:
+
+* discovers the repository root
+* invokes Docker BuildKit
+* prints build configuration
+* performs repository-root builds
+
+The wrapper has become the canonical image construction interface.
+
+== Runtime Validation
+
+=== Validation V-0001 — Image Construction
+
+Status::
+
+PASSED
+
+The runtime image successfully builds using:
 
 ----
 scripts/mcp/build-mcpo-filesystem.bash
-
-scripts/mcp/verify-mcpo-filesystem.bash
-
-scripts/mcp/inspect-mcpo-filesystem.bash
 ----
 
-Completion Criteria::
+Validation confirms:
 
-Every runtime image can be built and verified using repository tooling.
+* repository-root build context
+* BuildKit execution
+* constraints file copied correctly
+* successful image generation
 
-== Phase 3 — Development Environment
+=== Validation V-0002 — Package Graph
 
-Objective::
+Status::
 
-Provide a reproducible engineering environment using VS Code Dev Containers.
+PASSED
 
-Planned Deliverables::
-
-----
-.devcontainer/
-----
-
-Expected Capabilities::
-
-* Docker CLI
-* Docker Buildx
-* Git
-* Python
-* Node
-* ShellCheck
-* jq
-* curl
-* AsciiDoctor
-* Required VS Code extensions
-
-The development container will communicate with Docker Desktop through the
-Docker socket.
-
-The governed runtime will continue to execute as a separate Docker container.
-
-== Phase 4 — Runtime Profiles
-
-Objective::
-
-Separate environment-specific configuration from runtime implementation.
-
-Candidate Profiles::
+Validated package versions:
 
 ----
-config/profiles/
-
-    omelas-host.env
-
-    omelas-devcontainer.env
+mcpo 0.0.20
+mcp 1.28.1
 ----
 
-Completion Criteria::
+The runtime dependency graph is now deterministic.
 
-Runtime launch should require no manual environment modification.
+=== Validation V-0003 — Previous Runtime Failure
 
-== Phase 5 — Operator Documentation
+Status::
 
-Produce concise engineering documentation covering:
+PASSED
 
-* Runtime build
-* Runtime verification
-* Runtime launch
-* Open WebUI connection
-* OpenAPI validation
-* Filesystem MCP validation
-* Filesystem mutation capability validation (including recursive directory
-  creation and governed deletion)
-* Runtime upgrades
-* Troubleshooting
+The previous runtime failure:
 
-The emphasis is practical engineering operation rather than governance.
+----
+ImportError:
+cannot import name 'streamablehttp_client'
+----
 
-== Branch Completion Criteria
+is no longer reproducible.
 
-This branch is complete when:
+Validation:
 
-* Runtime image builds deterministically.
-* Dependency versions are explicitly pinned.
-* Runtime verification succeeds.
-* VS Code Dev Container is operational.
-* Open WebUI successfully communicates with the runtime.
-* Required filesystem mutation capabilities have been assessed and validated
-  against runtime access-mode policy.
-* GAE-0001 can resume using the stabilized runtime.
+----
+from mcp.client.streamable_http import streamablehttp_client
+----
 
-== Engineering Notes
+imports successfully.
 
-This section records engineering discoveries made during implementation.
+=== Validation V-0004 — MCPO Startup
+
+Status::
+
+PASSED
+
+Validated:
+
+----
+mcpo --help
+----
+
+MCPO now starts correctly.
+
+=== Validation V-0005 — Governed Launcher
+
+Status::
+
+PASSED
+
+The governed launcher successfully launches the MCPO runtime.
+
+Validated execution path:
+
+----
+run-mcp.bash
+        ↓
+Docker
+        ↓
+MCPO
+        ↓
+Filesystem MCP Server
+        ↓
+HTTP API
+----
+
+=== Validation V-0006 — HTTP Endpoint
+
+Status::
+
+PASSED
+
+Validated:
+
+----
+http://127.0.0.1:8765/docs
+----
+
+Swagger UI is successfully generated by MCPO.
+
+This confirms:
+
+* FastAPI startup
+* OpenAPI generation
+* HTTP routing
+* Docker port forwarding
+
+== Engineering Observations
+
+=== EO-0001
+
+The original runtime failure was caused by dependency drift rather than defects
+within the governed launcher.
+
+=== EO-0002
+
+Separating dependency policy from Docker implementation significantly improves
+runtime maintainability.
+
+=== EO-0003
+
+Repository-root Docker builds provide a cleaner long-term architecture than
+Dockerfile-relative contexts.
+
+=== EO-0004
+
+The build wrapper has evolved from a convenience script into the canonical
+runtime construction interface.
+
+=== EO-0005
+
+Explicit validation after each engineering change substantially reduced
+debugging effort.
+
+== Remaining Phase 1 Work
+
+Status::
+
+IN PROGRESS
+
+Remaining activities:
+
+* pin Node package versions
+* pin Docker base image by digest
+* introduce VS Code `.devcontainer`
+* reconnect Open WebUI
+* perform end-to-end Open WebUI tool validation
+
+== Looking Ahead
+
+Completion of Phase 1 will establish a deterministic runtime suitable for
+future engineering work.
+
+Subsequent phases are expected to focus on:
+
+* development environment reproducibility
+* runtime inspection utilities
+* automated validation
+* release engineering
+* runtime documentation
+
+== Current Assessment
+
+Phase 1 has successfully transformed the governed runtime from an implicitly
+resolved execution environment into an explicitly constrained and validated
+runtime.
+
+The engineering effort has shifted from correcting runtime failures toward
+hardening, reproducibility, and developer experience.
+
+The runtime is now substantially more deterministic than the original v0.1.0
+implementation and provides a solid foundation for future governed engineering.

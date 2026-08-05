@@ -1,15 +1,33 @@
+# syntax=docker/dockerfile:1
+
 FROM node:22-bookworm-slim
 
 ENV PATH="/opt/mcpo/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+WORKDIR /build
+
+COPY docker/mcp/constraints.txt ./constraints.txt
+
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends python3 python3-venv ca-certificates \
+    && apt-get install --yes --no-install-recommends \
+        ca-certificates \
+        python3 \
+        python3-venv \
     && python3 -m venv /opt/mcpo \
-    && /opt/mcpo/bin/pip install --no-cache-dir mcpo \
+    && /opt/mcpo/bin/pip install \
+        --no-cache-dir \
+        --constraint ./constraints.txt \
+        mcpo \
     && npm install --global @modelcontextprotocol/server-filesystem \
     && apt-get purge --yes --auto-remove python3-venv \
-    && rm -rf /var/lib/apt/lists/* /root/.cache /root/.npm
+    && rm -rf \
+        /build/* \
+        /var/lib/apt/lists/* \
+        /root/.cache \
+        /root/.npm
+
+WORKDIR /
 
 ENTRYPOINT ["mcpo"]

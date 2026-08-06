@@ -17,9 +17,10 @@ RUN apt-get update \
         python3-venv \
     && python3 -m venv /opt/mcpo \
     && /opt/mcpo/bin/pip install \
-        --no-cache-dir \
-        --constraint ./constraints.txt \
-        mcpo \
+         --no-cache-dir \
+         --constraint ./constraints.txt \
+         "mcpo" \
+         "mcp[cli]" \
     && npm install --global @modelcontextprotocol/server-filesystem \
     && apt-get purge --yes --auto-remove python3-venv \
     && rm -rf \

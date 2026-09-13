@@ -1,5 +1,5 @@
 @startuml
-title Governed MCP Build and Runtime Image Selection
+title Governed MCP Runtime Image Selection — Validated
 
 skinparam componentStyle rectangle
 skinparam shadowing false
@@ -7,22 +7,28 @@ skinparam shadowing false
 component "Pinned Dockerfile" as DF
 component "build-mcpo-filesystem.bash" as BUILD
 artifact "omelas/mcpo-filesystem:beta\nmutable build tag" as TAG
-artifact "Validated image\nsha256:2a55c88..." as IMG
+artifact "Validated image\nsha256:2a55c88be63c..." as IMG
 component "mcpo.bash / resume-mcpo.bash" as RUN
-component "Omelas-MCP-RW" as C
-folder "awake-in-omelas" as O
+component "Omelas-MCP-RW\n127.0.0.1:8765 -> 8000" as C
+component "Authenticated OpenAPI\nsecure-filesystem-server\n0.2.0" as API
+artifact "MCP_API_KEY\nlocal MCPO bearer token" as KEY
+artifact "OPENAI_API_KEY\nseparate provider credential" as OAI
 
 DF --> BUILD
 BUILD --> TAG : MCP_MCPO_BUILD_IMAGE
-TAG --> IMG : build result
-IMG --> RUN : MCP_MCPO_RUNTIME_IMAGE\nimmutable digest
-RUN --> C
-C --> O : RW mount
+TAG --> IMG : validated build result
+IMG --> RUN : MCP_MCPO_RUNTIME_IMAGE
+RUN --> C : governed restart
+KEY --> RUN : --api-key
+KEY --> API : Authorization: Bearer
+C --> API
+OAI -[hidden]-> KEY
 
 note right of BUILD
-Legacy MCP_MCPO_IMAGE remains
-as a deprecated compatibility
-fallback for build selection.
+Build precedence:
+1. MCP_MCPO_BUILD_IMAGE
+2. MCP_MCPO_IMAGE (deprecated)
+3. :beta
 end note
 
 note right of RUN
@@ -30,5 +36,11 @@ Runtime precedence:
 1. MCP_MCPO_RUNTIME_IMAGE
 2. MCP_MCPO_IMAGE (deprecated)
 3. validated immutable digest
+end note
+
+note bottom of KEY
+Credential provenance correction:
+MCP_API_KEY is a local MCPO token.
+It must not reuse OPENAI_API_KEY.
 end note
 @enduml

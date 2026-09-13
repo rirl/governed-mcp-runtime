@@ -6,10 +6,13 @@ REPOSITORY_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 
 DOCKERFILE="${REPOSITORY_ROOT}/docker/mcp/Dockerfile.mcpo-filesystem"
 BUILD_CONTEXT="${REPOSITORY_ROOT}"
-IMAGE_NAME="${MCP_MCPO_IMAGE:-omelas/mcpo-filesystem:beta}"
+IMAGE_NAME="${MCP_MCPO_BUILD_IMAGE:-${MCP_MCPO_IMAGE:-omelas/mcpo-filesystem:beta}}"
+
+if [[ -n "${MCP_MCPO_IMAGE:-}" && -z "${MCP_MCPO_BUILD_IMAGE:-}" ]]; then
+    echo "WARNING: MCP_MCPO_IMAGE is deprecated; use MCP_MCPO_BUILD_IMAGE for build output tagging." >&2
+fi
 
 BUILDER="$(docker buildx inspect --format '{{ .Name }}' 2>/dev/null || echo default)"
-
 
 echo
 echo "========================================"

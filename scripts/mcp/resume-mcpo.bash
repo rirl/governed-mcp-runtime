@@ -11,6 +11,21 @@ source "${SCRIPT_DIR}/lib/governance.bash"
 # shellcheck source=lib/health.bash
 source "${SCRIPT_DIR}/lib/health.bash"
 
+mcp_resolve_mcpo_runtime_image() {
+    if [[ -n "${MCP_MCPO_RUNTIME_IMAGE:-}" ]]; then
+        printf '%s\n' "${MCP_MCPO_RUNTIME_IMAGE}"
+        return 0
+    fi
+
+    if [[ -n "${MCP_MCPO_IMAGE:-}" ]]; then
+        echo "WARNING: MCP_MCPO_IMAGE is deprecated; use MCP_MCPO_RUNTIME_IMAGE for runtime selection." >&2
+        printf '%s\n' "${MCP_MCPO_IMAGE}"
+        return 0
+    fi
+
+    printf '%s\n' "omelas/mcpo-filesystem@sha256:2a55c88be63cacce7942359808ccad34ef488f2d852d7ffb0fec8a9196868fa1"
+}
+
 mcp_validate_api_key() {
     if [[ -z "${MCP_API_KEY:-}" ]]; then
         echo "ERROR: MCP_API_KEY is required for the MCPO resume path." >&2
@@ -29,7 +44,8 @@ mcp_validate_container_absent() {
 }
 
 mcp_start_detached_mcpo() {
-    local image="${MCP_MCPO_IMAGE:-omelas/mcpo-filesystem:beta}"
+    local image
+    image="$(mcp_resolve_mcpo_runtime_image)"
 
     docker run --detach --rm \
         --name "${MCP_EFFECTIVE_CONTAINER_NAME}" \

@@ -1,0 +1,34 @@
+@startuml
+title Governed MCP Build and Runtime Image Selection
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+component "Pinned Dockerfile" as DF
+component "build-mcpo-filesystem.bash" as BUILD
+artifact "omelas/mcpo-filesystem:beta\nmutable build tag" as TAG
+artifact "Validated image\nsha256:2a55c88..." as IMG
+component "mcpo.bash / resume-mcpo.bash" as RUN
+component "Omelas-MCP-RW" as C
+folder "awake-in-omelas" as O
+
+DF --> BUILD
+BUILD --> TAG : MCP_MCPO_BUILD_IMAGE
+TAG --> IMG : build result
+IMG --> RUN : MCP_MCPO_RUNTIME_IMAGE\nimmutable digest
+RUN --> C
+C --> O : RW mount
+
+note right of BUILD
+Legacy MCP_MCPO_IMAGE remains
+as a deprecated compatibility
+fallback for build selection.
+end note
+
+note right of RUN
+Runtime precedence:
+1. MCP_MCPO_RUNTIME_IMAGE
+2. MCP_MCPO_IMAGE (deprecated)
+3. validated immutable digest
+end note
+@enduml

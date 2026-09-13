@@ -1,7 +1,24 @@
 #!/usr/bin/env bash
 
+mcp_resolve_mcpo_runtime_image() {
+    if [[ -n "${MCP_MCPO_RUNTIME_IMAGE:-}" ]]; then
+        printf '%s\n' "${MCP_MCPO_RUNTIME_IMAGE}"
+        return 0
+    fi
+
+    if [[ -n "${MCP_MCPO_IMAGE:-}" ]]; then
+        echo "WARNING: MCP_MCPO_IMAGE is deprecated; use MCP_MCPO_RUNTIME_IMAGE for runtime selection." >&2
+        printf '%s\n' "${MCP_MCPO_IMAGE}"
+        return 0
+    fi
+
+    printf '%s\n' "omelas/mcpo-filesystem@sha256:2a55c88be63cacce7942359808ccad34ef488f2d852d7ffb0fec8a9196868fa1"
+}
+
 mcp_run_runtime() {
-    local image="${MCP_MCPO_IMAGE:-omelas/mcpo-filesystem:beta}"
+    local image
+    image="$(mcp_resolve_mcpo_runtime_image)"
+
     local api_key="${MCP_API_KEY:-}"
     local -a auth_options=()
 

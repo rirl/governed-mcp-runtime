@@ -1,0 +1,51 @@
+@startuml
+title MCP Runtime Recovery and Pinning Checkpoint
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+node "WSL2: Ubuntu-TF" as UTF {
+  folder "terraform-openwebui" as TF
+  component "Terraform" as Terraform
+}
+
+node "Docker Desktop" as Docker {
+  component "open-webui-tf\n:3001 -> :8080\nhealthy" as OWUI
+  component "Omelas-MCP-RW\n:8765 -> :8000\nrecovered baseline" as BASE
+  component "Pinned candidate\n:8766 -> :8000\nvalidation only" as TEST
+}
+
+node "WSL2: Ubuntu" as U {
+  folder "governed-mcp-runtime" as GMR
+  folder "awake-in-omelas" as OML
+}
+
+artifact "Pinned build inputs" as PINS {
+  node:22.23.2-bookworm-slim
+  amd64 digest pinned
+  mcpo==0.0.20
+  mcp==1.28.1
+  server-filesystem==2026.8.31
+}
+
+TF --> Terraform
+Terraform --> OWUI : manage / recover
+
+GMR --> BASE : governed launcher
+GMR --> TEST : candidate validation
+BASE --> OML : RW mount\n/workspace/omelas
+TEST --> OML : RW mount\n/workspace/omelas
+PINS --> TEST : build
+
+note bottom of BASE
+Known-good runtime retained
+while pinned candidate was tested.
+end note
+
+note bottom of TEST
+Behavior matched baseline:
+OpenAPI 0.2.0
+uid/gid 1001:1001
+stdio filesystem server
+end note
+@enduml

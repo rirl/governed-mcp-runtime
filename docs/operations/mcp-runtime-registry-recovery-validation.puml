@@ -1,0 +1,52 @@
+@startuml
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultTextAlignment center
+skinparam ArrowThickness 1.5
+skinparam packageStyle rectangle
+
+title MCP Runtime Registry Recovery Validation\nFour-Phase Acceptance Test
+
+actor "Operator\nUbuntu / WSL" as OP
+node "Local Docker Engine" as LOCAL {
+  artifact "Validated image\nsha256:2a55c88be63c..." as IMG
+  component "Omelas-MCP-RW" as MCP
+}
+cloud "Private GHCR\nghcr.io/rirl/governed-mcp-runtime" as GHCR
+component "Governed resume\nresume-mcpo.bash readwrite" as RESUME
+component "Authenticated OpenAPI\n127.0.0.1:8765/openapi.json" as API
+
+== Phase 1: Remote availability ==
+OP -> GHCR : authenticate
+OP -> GHCR : inspect immutable digest
+GHCR --> OP : exact digest available\nPASS
+
+== Phase 2: Local loss simulation ==
+OP -> LOCAL : remove local tags + image
+LOCAL --> OP : validated image absent\nPASS
+
+== Phase 3: Registry recovery ==
+OP -> GHCR : authenticate
+OP -> GHCR : pull by immutable digest
+GHCR --> LOCAL : restore sha256:2a55c88be63c...
+LOCAL --> OP : image ID matches expected\nPASS
+
+== Phase 4: Governed runtime recovery ==
+OP -> RESUME : readwrite
+RESUME -> LOCAL : run recovered digest
+LOCAL -> MCP : create container\nuser 1001:1001
+MCP -> API : serve 127.0.0.1:8765 -> 8000
+OP -> API : Bearer MCP_API_KEY
+API --> OP : HTTP 200\ntitle=secure-filesystem-server\nversion=0.2.0\nPASS
+
+note bottom of GHCR
+  Private package
+  Authenticated pull required
+end note
+
+note bottom of LOCAL
+  Build tag :beta remains separate
+  Runtime trust boundary = immutable digest
+end note
+
+@enduml

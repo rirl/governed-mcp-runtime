@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+    <style>
+      .title{font:700 34px sans-serif;fill:#111}
+      .sub{font:500 20px sans-serif;fill:#444}
+      .phase{font:700 22px sans-serif;fill:#111}
+      .box{fill:#fff;stroke:#333;stroke-width:2;rx:18}
+      .cloud{fill:#fff;stroke:#333;stroke-width:2;stroke-dasharray:8 6}
+      .label{font:600 18px sans-serif;fill:#111}
+      .small{font:16px sans-serif;fill:#222}
+      .pass{font:700 18px sans-serif;fill:#111}
+      .arrow{stroke:#333;stroke-width:2.2;fill:none;marker-end:url(#arrow)}
+      .note{fill:#f7f7f7;stroke:#777;stroke-width:1.5;rx:12}
+    </style>
+  </defs>
+  <text x="800" y="55" text-anchor="middle" class="title">MCP Runtime Registry Recovery Validation</text>
+  <text x="800" y="88" text-anchor="middle" class="sub">Four-Phase Acceptance Test</text>
+
+  <rect x="80" y="160" width="340" height="180" class="box"/>
+  <text x="250" y="198" text-anchor="middle" class="label">Local Docker Engine</text>
+  <text x="250" y="238" text-anchor="middle" class="small">Validated image</text>
+  <text x="250" y="267" text-anchor="middle" class="small">sha256:2a55c88be63c...</text>
+  <text x="250" y="305" text-anchor="middle" class="small">Omelas-MCP-RW</text>
+
+  <rect x="630" y="160" width="340" height="180" class="cloud"/>
+  <text x="800" y="198" text-anchor="middle" class="label">Private GHCR</text>
+  <text x="800" y="238" text-anchor="middle" class="small">ghcr.io/rirl/</text>
+  <text x="800" y="266" text-anchor="middle" class="small">governed-mcp-runtime</text>
+  <text x="800" y="305" text-anchor="middle" class="small">Authenticated pull required</text>
+
+  <rect x="1180" y="160" width="340" height="180" class="box"/>
+  <text x="1350" y="198" text-anchor="middle" class="label">Governed Runtime</text>
+  <text x="1350" y="238" text-anchor="middle" class="small">resume-mcpo.bash readwrite</text>
+  <text x="1350" y="274" text-anchor="middle" class="small">127.0.0.1:8765 → 8000</text>
+  <text x="1350" y="305" text-anchor="middle" class="small">user 1001:1001</text>
+
+  <text x="95" y="425" class="phase">Phase 1 — Remote availability</text>
+  <path d="M420 445 C520 390 585 390 630 445" class="arrow"/>
+  <text x="520" y="392" text-anchor="middle" class="small">authenticate + inspect digest</text>
+  <text x="520" y="420" text-anchor="middle" class="pass">PASS</text>
+
+  <text x="95" y="520" class="phase">Phase 2 — Local loss simulation</text>
+  <path d="M250 535 L250 625" class="arrow"/>
+  <text x="275" y="575" class="small">remove local tags + image</text>
+  <text x="275" y="602" class="pass">PASS: image absent</text>
+
+  <text x="630" y="520" class="phase">Phase 3 — Registry recovery</text>
+  <path d="M630 555 C555 610 470 610 420 555" class="arrow"/>
+  <text x="520" y="640" text-anchor="middle" class="small">pull by immutable digest</text>
+  <text x="520" y="668" text-anchor="middle" class="pass">PASS: exact image ID restored</text>
+
+  <text x="1030" y="520" class="phase">Phase 4 — Governed runtime recovery</text>
+  <path d="M970 570 L1180 570" class="arrow"/>
+  <text x="1075" y="550" text-anchor="middle" class="small">run recovered digest</text>
+  <path d="M1350 340 L1350 705" class="arrow"/>
+  <text x="1372" y="610" class="small">authenticated OpenAPI</text>
+  <text x="1372" y="640" class="small">title=secure-filesystem-server</text>
+  <text x="1372" y="668" class="small">version=0.2.0</text>
+  <text x="1372" y="696" class="pass">PASS</text>
+
+  <rect x="80" y="725" width="660" height="110" class="note"/>
+  <text x="410" y="760" text-anchor="middle" class="label">Control conclusion</text>
+  <text x="410" y="795" text-anchor="middle" class="small">Build tag :beta remains separate; runtime trust boundary is the immutable digest.</text>
+
+  <rect x="860" y="725" width="660" height="110" class="note"/>
+  <text x="1190" y="760" text-anchor="middle" class="label">Recovery conclusion</text>
+  <text x="1190" y="795" text-anchor="middle" class="small">Private GHCR → exact digest recovery → governed resume → authenticated OpenAPI success.</text>
+</svg>
